@@ -2,6 +2,7 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 
+import { resetIngresses } from "@/actions/ingress";
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
@@ -59,6 +60,11 @@ export async function POST(req: Request) {
         externalUserId: payload.data.id,
         username: payload.data.username,
         imageUrl: payload.data.image_url,
+        stream: {
+          create: {
+            name: `${payload.data.username}'s stream`,
+          },
+        },
       },
     });
   }
@@ -76,6 +82,8 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.deleted") {
+    await resetIngresses(payload.data.id);
+
     await db.user.delete({
       where: {
         externalUserId: payload.data.id,
